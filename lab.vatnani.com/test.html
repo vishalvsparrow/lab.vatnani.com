@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Total personality types pie chart</title>
+    <style type="text/css">
+    
+ div.tooltip {  
+    position: absolute;     
+    text-align: center;     
+    width: 60px;          
+    height: 28px;         
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;     
+}
+
+    </style>
+  </head>
+  <body>
+  
+
+    <div id="pie"></div>  
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script>
+
+    //var json_data;
+
+    var root = 'http://lab.vatnani.com:5000/api/personality';
+    var vishal;
+    var json_data = null;
+   
+   /*
+   function api_call() {
+    $(document).ready(function() {
+        $.get(root, function(data, status){
+          //window.json_data = null;
+          vishal = 'hello vishal';
+          //console.log("Data: " + JSON.stringify(data) + "\nStatus: " + status);
+          json_data = data;
+        });
+      });
+    }
+
+    */
+
+
+    function api_call(callback) {
+        $.get(root, callback);
+      };
+
+
+    api_call(function(data) {
+      my_data = (JSON.stringify(data))
+//      console.log(my_data);
+      make_graph(data);
+    });
+
+
+
+
+    //function call_on_me() {
+      //var something = vishal + ", how are you today?";
+      //return something;
+      //var something = json_data;
+      //return something;
+    //}
+
+    //console.log(call_on_me());
+
+    //console.log(window.vishal);
+    //console.log(window.json_data);
+      //json_data = JSON.parse(json_data);
+ 
+
+    </script>
+    
+    <script>
+
+    function make_graph(data1) {
+
+    /*
+
+    var data = [{"label":"One", "value":20}, 
+              {"label":"Two", "value":50}, 
+              {"label":"Three", "value":30}];
+
+    */
+
+    // console.log(data);
+
+
+    var data = [];          
+
+    //console.log(json_data);
+    
+    //data1 = JSON.parse(data1)
+
+    console.log((data1['_items'][0]['_id'])+"RECEIVED!");
+
+    for(var i=0;i<data1['_items'].length;i+=1) {
+      console.log(data1['_items'][i]['_id']);
+      console.log(data1['_items'][i]['count']);
+
+      my_label = data1['_items'][i]['_id'];
+      my_count = data1['_items'][i]['count'];
+
+      data.push({"label": my_label, "value": my_count});
+
+    }
+
+    console.log(data);
+
+
+  var width = 1500,
+  height = 1500,
+  radius = Math.min(width, height) / 2;
+
+  var color = d3.scaleOrdinal().range(["#2C93E8","#838690","#F56C4E","#00000"]);
+
+  var pie = d3.pie().value(function(d) { return d.value; })(data);
+
+  var arc = d3.arc()
+  .outerRadius(radius - 10)
+  .innerRadius(0);
+  
+  var labelArc = d3.arc()
+  .outerRadius(radius - 60)
+  .innerRadius(radius - 100);
+
+  var div = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+  var svg = d3.select("body")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height)
+    .append("g")
+    .attr("transform", "translate(" + width/2 + "," + height/2 +")"); // Moving the center point. 1/2 the width and 1/2 the height
+
+
+  var g = svg.selectAll("arc")
+  .data(pie)
+  .enter().append("g")
+  .attr("class", "arc");
+  
+
+  g.append("path")
+  .attr("d", arc)
+  .style("fill", function(d) { return color(d.data.label);});
+
+  g.append("text")
+  .attr("transform", function(d) { return "translate(" + labelArc.centroid(d) + ")"; })
+  .text(function(d) { return d.data.label;}) 
+  .style("fill", "#fff");
+
+
+  }
+
+    </script>
+
+
+
+  </body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+ 
+svg{ font: 12px Arial;}
+ 
+path { 
+  stroke: steelblue;
+  stroke-width: 2;
+  fill: none;
+}
+ 
+.axis path,
+.axis line {
+	fill: none;
+	stroke: grey;
+	stroke-width: 1;
+	shape-rendering: crispEdges;
+}
+ 
+</style>
+<body>
+<div> 
+User Object ID: <input type = "text" id = "ObjId"/>
+<br/><br/>
+<button onclick = "make_call()">Make a call</button>
+	<h2 id = "greet"></h2>
+</div>
+
+<div class="graph" style ="padding-top: 1%;">
+</div>
+
+<!-- load the d3.js library -->	
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<script>
+	
+	url = 'http://lab.vatnani.com:5000/api/personal/';
+
+	function make_call() {
+
+	ObjId = document.getElementById("ObjId").value;
+	url = url+ObjId;
+
+	function api_call(callback) {
+        $.get(url, callback);
+      };
+
+    api_call(function(data) {
+    	my_data = (JSON.stringify(data))
+		//console.log(my_data);
+      	make_graph(data);
+    });
+
+    url = 'http://lab.vatnani.com:5000/api/personal/';
+};
+
+</script> 
+
+<script>
+
+function make_graph(data)
+{
+
+d3.select("svg").remove();
+
+// var mydata = [{date_taken: "11/28/12", result: "ENFP"},
+// 	{date_taken: "08/15/12", result: "INTP"},
+// 	{date_taken: "07/29/12", result: "ESFJ"},
+// 	{date_taken: "04/30/12", result: "ENFP"},
+// 	{date_taken: "01/27/12", result: "ENFJ"}];
+
+var user = data['first_name'];
+var generic_greet = "Hello, "
+document.getElementById("greet").innerHTML = generic_greet + user;
+
+var tests = data['tests'];
+var clean_test = [];
+
+for (var i = tests.length - 1; i >= 0; i--) {
+	//console.log(tests[i])
+	//console.log(tests[i]['result'] == 'incomplete')
+	if(tests[i]['result'] != 'incomplete'){
+
+		clean_test.push(tests[i])
+	}
+}
+
+console.log("clean array");
+//console.log(new Date(clean_test[1].date_taken));
+console.log(clean_test);
+
+clean_test.sort(function(a,b) {
+//	console.log("inside sort");
+//	console.log(typeof(a.date_taken));
+//	console.log(b);
+//	console.log(new Date(b.date_taken) - new Date(a.date_taken));
+	return (new Date(b.date_taken) - new Date(a.date_taken));
+	//return(b.date_taken - a.date_taken);
+});
+
+//console.log("post sorting");
+//console.log(clean_test);
+
+// var mydata1 = new Array(4);
+// console.log("mydata");
+// console.log(mydata1);
+
+// for (var i = clean_test.length - 1; i >=0; i--){
+// 	mydata1[i].date = clean_test[i].date_taken;
+// 	mydata1[i].close = clean_test[i].result;
+// }
+
+// console.log(mydata1);
+ 
+mydata = clean_test; 
+
+//console.log(clean_test);
+//console.log(mydata);
+
+// Parse the date / time
+var	parseDate = d3.time.format("%m/%d/%Y").parse;
+mydata_dates = new Array(); 
+
+ mydata.forEach(function(d)
+		{	//console.log(d.date_taken);
+			d.date_taken = parseDate(d.date_taken);
+			//console.log(d.date_taken);
+			//d.close = +d.close;
+			//console.log(d.close)
+			mydata_dates.push(d.date_taken);	
+		}
+	)
+
+// Set the dimensions of the canvas / graph
+var	margin = {top: 30, right: 40, bottom: 77, left: 60},
+	width = 600 - margin.left - margin.right,
+	height = 270 - margin.top - margin.bottom;
+ 
+// Set the ranges
+var	x = d3.time.scale().range([0, width]);
+var	y = d3.scale.ordinal().rangePoints([height, 0]);
+ 
+// Define the axes
+var	xAxis = d3.svg.axis().scale(x)
+	.orient("bottom").ticks(20)
+	.tickFormat(d3.time.format('%b-%d-%y'));
+
+if(mydata.length < 15 ){
+
+	xAxis.tickValues(mydata_dates);
+
+}	
+ 
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .innerTickSize(-width)
+    .outerTickSize(0)
+    .tickPadding(10);
+ 
+// Define the line
+var	valueline = d3.svg.line()
+	.y(function(d) { return y(d.result); })
+	.x(function(d) { return x(d.date_taken); });
+    
+// Adds the svg canvas
+var	svg = d3.select("body").select(".graph")
+	.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+	.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+	// Scale the range of the data
+	x.domain(d3.extent(mydata, function(d) { return d.date_taken; }));
+	//y.domain([0, d3.max(mydata, function(d) { return d.close; })]);
+	y.domain(mydata.map(function(d) { return d.result; }));
+ 
+	// Add the valueline path.
+	svg.append("path")	
+		.attr("class", "line")
+		.attr("d", valueline(mydata));
+ 
+	// Add the X Axis
+	svg.append("g")		
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + height + ")")
+		.call(xAxis)
+		.selectAll("text")
+			.style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-65)" );;
+ 
+	// Add the Y Axis
+	svg.append("g")		
+		.attr("class", "y axis")
+		.call(yAxis);
+ };
+
+</script>
+</body>
